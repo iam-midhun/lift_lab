@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1220">
+<meta name="description" content="LiftLab personal workout planner and progress tracker">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>LiftLab — 5-Day Training Plan</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d30;--panel2:#18263c;--line:#26364d;--text:#edf3fb;--muted:#9aabc1;--accent:#69d2b1;--accent2:#8db8ff;--warn:#f5c46b;--danger:#f18b8b;--shadow:0 14px 35px #0003}
+[data-theme="light"]{--bg:#f2f5f9;--panel:#fff;--panel2:#f5f8fc;--line:#dce4ee;--text:#172235;--muted:#607086;--accent:#087e63;--accent2:#2868bd;--warn:#a96b00;--danger:#b43e3e;--shadow:0 12px 28px #1c355010}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}.shell{max-width:1180px;margin:auto;padding:24px 20px 60px}
+header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}.brand{display:flex;align-items:center;gap:12px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#081321;font-weight:900;font-size:19px}.brand h1{font-size:22px;line-height:1.1;margin:0}.brand p{margin:4px 0 0;color:var(--muted);font-size:12px}.header-actions{display:flex;gap:9px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:9px 13px;border-radius:10px;font-weight:650}.btn:hover{border-color:var(--accent)}.btn.primary{background:var(--accent);border-color:var(--accent);color:#071b17}.hero{display:grid;grid-template-columns:1.45fr .8fr;gap:16px;margin-bottom:18px}.hero-main,.hero-side,.panel,.day-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.hero-main{padding:24px}.eyebrow{color:var(--accent);font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}.hero h2{font-size:clamp(25px,4vw,38px);line-height:1.13;margin:8px 0 10px;letter-spacing:-1px}.hero p{color:var(--muted);max-width:680px;margin:0}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:17px}.chip{font-size:12px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);padding:5px 9px;border-radius:999px}.hero-side{padding:20px;display:flex;flex-direction:column;justify-content:center}.stat{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.stat:last-child{border:0}.stat span{color:var(--muted);font-size:13px}.stat strong{font-size:14px}
+nav{display:flex;gap:8px;overflow:auto;padding:3px 0 13px;margin-bottom:8px}nav button{white-space:nowrap;border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--panel);color:var(--muted);font-weight:700}nav button.active{background:var(--accent);color:#071b17;border-color:var(--accent)}
+.view{display:none}.view.active{display:block}.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:8px 0 16px}.section-head h2{margin:0;font-size:23px}.section-head p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.days{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:15px}.day-select{padding:13px 12px;text-align:left;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--text)}.day-select.active{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}.day-select small{display:block;color:var(--muted);font-size:11px}.day-select strong{display:block;font-size:13px;margin-top:4px}
+.day-card{padding:22px}.day-top{display:flex;justify-content:space-between;gap:16px;align-items:start}.day-top h2{margin:0;font-size:25px}.day-top p{margin:5px 0 0;color:var(--muted)}.day-meta{display:flex;gap:7px;flex-wrap:wrap;margin:13px 0 18px}.tag{font-size:11px;color:var(--accent2);background:color-mix(in srgb,var(--accent2) 12%,transparent);border-radius:7px;padding:5px 8px;font-weight:700}
+.split-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.subhead{font-size:12px;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);font-weight:800;margin:18px 0 9px}.exercise{border:1px solid var(--line);border-radius:13px;margin:9px 0;background:var(--panel2);overflow:hidden}.exercise-head{display:flex;align-items:center;gap:12px;padding:13px;cursor:pointer}.num{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:var(--panel);color:var(--accent);font-size:12px;font-weight:800;flex:none}.ex-title{flex:1;min-width:0}.ex-title strong{display:block;font-size:14px}.ex-title small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.sets{font-size:12px;color:var(--accent);font-weight:800;white-space:nowrap}.chev{color:var(--muted);font-size:17px}.exercise-body{display:none;padding:0 14px 14px 53px}.exercise.open .exercise-body{display:block}.muscles{display:flex;gap:6px;flex-wrap:wrap;margin:3px 0 10px}.muscle{font-size:10px;padding:4px 7px;border-radius:6px;background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);font-weight:750}.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}.detail{background:var(--panel);border:1px solid var(--line);padding:8px;border-radius:8px}.detail small{display:block;color:var(--muted);font-size:10px}.detail b{font-size:12px}.exercise-body p{font-size:12px;color:var(--muted);margin:7px 0}.exercise-body p b{color:var(--text)}.alt-list{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.alt{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:6px 8px;border-radius:7px;font-size:11px}.alt.selected{border-color:var(--accent);color:var(--accent)}.log-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:10px}.log-row input{width:78px;background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--text);padding:7px}.log-row label{font-size:10px;color:var(--muted)}.log-row button{padding:7px 10px;font-size:11px}
+.routine-box{padding:15px;border:1px solid var(--line);border-radius:13px;background:var(--panel2);margin-top:14px}.routine-box h3{margin:0 0 8px;font-size:14px}.routine-box ul{padding-left:18px;margin:0;color:var(--muted);font-size:12px}.routine-box li{margin:5px 0}.note{border-left:3px solid var(--warn);padding:10px 12px;background:color-mix(in srgb,var(--warn) 9%,transparent);color:var(--muted);font-size:12px;border-radius:0 8px 8px 0;margin-top:13px}
+.overview-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.overview-card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px}.overview-card h3{margin:0;font-size:13px}.overview-card p{margin:5px 0;color:var(--muted);font-size:11px}.volume{margin-top:18px}.volume-row{display:grid;grid-template-columns:125px 1fr 42px;align-items:center;gap:10px;margin:12px 0;font-size:12px}.bar{height:9px;border-radius:20px;background:var(--panel2);overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);border-radius:20px}.panel{padding:19px;margin:12px 0}.panel h3{margin:0 0 8px}.panel p,.panel li{color:var(--muted);font-size:13px}.library-tools{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}.library-tools input,.library-tools select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px}.library-list{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.library-item{padding:13px;border:1px solid var(--line);border-radius:11px;background:var(--panel)}.library-item strong{font-size:13px}.library-item p{font-size:11px;color:var(--muted);margin:4px 0}
+.tracker-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.progress-number{font-size:34px;font-weight:850;color:var(--accent)}.progress-track{height:10px;background:var(--panel2);border-radius:20px;overflow:hidden;margin:10px 0}.progress-track i{display:block;height:100%;background:var(--accent)}.history{width:100%;border-collapse:collapse;font-size:12px}.history th,.history td{text-align:left;padding:9px;border-bottom:1px solid var(--line)}.history th{color:var(--muted)}.empty{color:var(--muted);font-size:13px;padding:14px 0}
+footer{margin-top:26px;color:var(--muted);font-size:11px;text-align:center}
+@media(max-width:800px){.hero{grid-template-columns:1fr}.days{grid-template-columns:repeat(5,minmax(105px,1fr));overflow:auto}.overview-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.shell{padding:16px 12px 40px}header{align-items:flex-start}.brand h1{font-size:19px}.hero-main{padding:19px}.day-card{padding:15px}.day-top{display:block}.split-grid,.tracker-grid,.library-list{grid-template-columns:1fr}.detail-grid{grid-template-columns:repeat(3,1fr)}.section-head{align-items:start;flex-direction:column}.volume-row{grid-template-columns:95px 1fr 30px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+ <div class="brand"><div class="logo">LL</div><div><h1>LiftLab</h1><p>Your personal training companion</p></div></div>
+ <div class="header-actions"><button class="btn" id="themeBtn">☼ Light mode</button><button class="btn" id="exportBtn">Export progress</button></div>
+</header>
+
+<section class="panel" id="accountPanel" style="margin-bottom:16px">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+    <div><div class="eyebrow">Cloud account</div><strong id="accountStatus">Not signed in — progress is stored on this device only.</strong></div>
+    <button class="btn" id="signOutBtn" style="display:none">Sign out</button>
+  </div>
+  <div id="authForm" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+    <input id="authEmail" type="email" autocomplete="email" placeholder="Email address" style="min-width:190px;flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px">
+    <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password (6+ characters)" style="min-width:190px;flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px">
+    <button class="btn primary" id="signInBtn">Sign in</button>
+    <button class="btn" id="signUpBtn">Create account</button>
+  </div>
+  <p id="authMessage" style="margin:8px 0 0;color:var(--muted);font-size:12px">Create an account to sync your exercise logs and body-weight entries across devices.</p>
+</section>
+
+<section class="hero">
+ <div class="hero-main"><div class="eyebrow">Your training plan</div><h2>Train with purpose.<br>Progress with consistency.</h2><p>A balanced five-day resistance-training plan designed around fat loss, muscle retention and hypertrophy. Use the exercise details, substitutions and logs to make every session count.</p><div class="chips"><span class="chip">5 training days</span><span class="chip">60–80 min sessions</span><span class="chip">Progressive overload</span><span class="chip">Commercial gym</span></div></div>
+ <div class="hero-side"><div class="stat"><span>Primary goal</span><strong>Fat loss + muscle</strong></div><div class="stat"><span>Training approach</span><strong>Hypertrophy</strong></div><div class="stat"><span>Effort target</span><strong>1–3 RIR</strong></div><div class="stat"><span>Recovery</span><strong>2 rest days</strong></div></div>
+</section>
+<nav id="mainNav">
+ <button class="active" data-view="workouts">Workout plan</button><button data-view="overview">Weekly overview</button><button data-view="library">Exercise library</button><button data-view="progress">Progress tracker</button>
+</nav>
+<section id="workouts" class="view active">
+ <div class="section-head"><div><h2>Your five-day split</h2><p>Select a day, expand an exercise and log your working sets.</p></div></div>
+ <div class="days" id="dayButtons"></div><div id="dayContent"></div>
+</section>
+<section id="overview" class="view">
+ <div class="section-head"><div><h2>Weekly overview</h2><p>Training distribution and estimated direct working sets.</p></div></div>
+ <div class="overview-grid" id="overviewCards"></div>
+ <div class="panel volume"><h3>Estimated weekly direct sets</h3><p>These are approximate direct sets. Compound exercises also provide indirect stimulus to assisting muscles.</p><div id="volumeBars"></div></div>
+ <div class="panel"><h3>Recovery layout</h3><p><b>Example:</b> Monday Day 1 · Tuesday Day 2 · Wednesday Day 3 · Thursday Rest · Friday Day 4 · Saturday Day 5 · Sunday Rest.</p><p>Keep the rest days flexible. If fatigue, soreness or performance is unusually poor, take an extra recovery day rather than forcing the schedule.</p></div>
+</section>
+<section id="library" class="view">
+ <div class="section-head"><div><h2>Exercise library</h2><p>Search the plan by exercise, muscle group or equipment.</p></div></div>
+ <div class="library-tools"><input id="searchExercise" placeholder="Search exercises or muscles…"><select id="filterMuscle"><option value="">All muscle groups</option><option>Chest</option><option>Back</option><option>Shoulders</option><option>Biceps</option><option>Triceps</option><option>Quadriceps</option><option>Hamstrings</option><option>Glutes</option><option>Calves</option><option>Abs</option></select></div><div class="library-list" id="libraryList"></div>
+</section>
+<section id="progress" class="view">
+ <div class="section-head"><div><h2>Progress tracker</h2><p>Exercise logs and body-weight entries sync to your account when signed in. Without an account, they remain on this device.</p></div></div>
+ <div class="tracker-grid"><div class="panel"><div class="eyebrow">Workout completion</div><div class="progress-number" id="completionNum">0%</div><div class="progress-track"><i id="completionBar" style="width:0%"></i></div><p id="completionText">No sessions completed yet.</p><button class="btn" id="resetWeek">Reset workout checkmarks</button></div><div class="panel"><h3>How to use your log</h3><p>Open an exercise, enter the weight and reps you completed, then save the entry. The latest entries appear below. Use the export button to download a backup.</p></div></div>
+ 
+<div class="panel">
+  <h3>Body-weight tracking</h3>
+  <p>Record your weight in kilograms. Entries are private to your account when signed in.</p>
+  <div class="log-row">
+    <label>Weight (kg) <input type="number" id="bodyWeightInput" min="1" max="999" step="0.1" placeholder="80.0"></label>
+    <label>Date <input type="date" id="bodyWeightDate"></label>
+    <button class="btn primary" id="saveBodyWeight">Save weight</button>
+  </div>
+  <div id="bodyWeightHistory" style="margin-top:12px"></div>
+</div>
+
+<div class="panel"><h3>Recent exercise logs</h3><div id="historyWrap"></div></div>
+</section>
+<footer>LiftLab · Cloud features require an account and internet connection. A practical training template, not a medical prescription.</footer>
+</div>
+<script>
+const days=[
+{title:"Chest + Triceps",focus:"Chest pressing, chest adduction and triceps",duration:"60–75 min",warm:["5 min brisk walk or easy cycle","Arm circles × 10 each direction","Band pull-aparts × 15","Scapular push-ups × 10","Before first press: 2–3 gradually heavier warm-up sets"],cool:["Doorway chest stretch — 20–30 sec per side","Overhead triceps stretch — 20–30 sec per side","Gentle shoulder rolls — 8 each way"],note:"Chest presses already train the front delts and triceps. Keep direct triceps volume moderate today so the dedicated arm day remains productive.",groups:[
+["CHEST",[
+["Machine chest press","3 × 6–10","Chest (mid/overall fibres)","Triceps; anterior deltoids","Machine","Set the seat so handles align around mid-chest. Press without locking aggressively; return slowly.","Keep shoulder blades gently retracted; avoid shrugging.","Barbell bench press","Dumbbell flat press","Smith machine bench press"],
+["Incline dumbbell press","3 × 8–12","Upper chest (clavicular fibres)","Anterior deltoids; triceps","Dumbbells / incline bench","Use a modest incline. Lower dumbbells under control to a comfortable depth, then press up.","Keep wrists stacked over elbows; avoid an excessively steep bench.","Incline machine press","Smith incline press","Incline barbell press"],
+["Cable fly","2 × 12–15","Chest (sternal fibres; adduction)","Anterior deltoids","Cable station","Use a slight elbow bend and bring hands together in a hugging arc. Control the stretch.","Do not turn it into a press or force an extreme shoulder stretch.","Pec deck","Dumbbell fly (light)","Single-arm cable fly"]]],
+["TRICEPS",[
+["Cable triceps pushdown","2 × 10–15","Triceps (lateral and medial heads)","Long head assists","Cable / rope or bar","Keep elbows near your sides and extend the elbows fully without swinging.","Avoid leaning your whole body over the cable.","Straight-bar pushdown","Single-arm cable pushdown","Machine triceps extension"]]]]},
+{title:"Back + Biceps",focus:"Vertical pulling, horizontal rowing and elbow flexion",duration:"65–80 min",warm:["5 min easy rower or treadmill","Thoracic rotations × 8 per side","Band straight-arm pulldown × 12","Light cable row × 12","Before first heavy pull: 2 progressive warm-up sets"],cool:["Lat stretch on a stable post — 20–30 sec per side","Cross-body upper-back stretch — 20–30 sec per side","Gentle forearm flexor stretch — 20 sec per side"],note:"Use one vertical pull, two distinct row patterns and a lat isolation movement. Avoid adding several nearly identical rows just to increase exercise count.",groups:[
+["BACK",[
+["Neutral-grip lat pulldown","3 × 8–12","Lats (width / shoulder adduction)","Biceps; teres major; mid-back stabilizers","Cable machine","Pull elbows down toward your sides; pause briefly, then allow a controlled stretch overhead.","Do not swing backward or pull the bar behind your neck.","Medium-grip pulldown","Assisted pull-up","Single-arm kneeling pulldown"],
+["Chest-supported row","3 × 8–12","Mid-back: rhomboids and middle trapezius","Lats; rear deltoids; biceps","Chest-supported machine / bench","Drive elbows back while keeping chest supported. Control the reach forward.","Do not shrug or jerk the weight.","Incline bench dumbbell row","Chest-supported T-bar row","Machine row"],
+["Seated cable row (neutral grip)","2 × 10–12","Mid-back and lats","Rhomboids; traps; biceps","Cable station","Sit tall and row toward lower ribs. Let shoulder blades move naturally without rounding excessively.","Avoid turning each rep into a torso swing.","Close-grip machine row","One-arm cable row","Wide-grip seated row"],
+["Straight-arm cable pulldown","2 × 12–15","Lats","Teres major; long head of triceps assists shoulder extension","Cable / straight bar","With a soft elbow bend, sweep the bar toward thighs while keeping ribs controlled.","Do not turn it into a triceps pushdown.","Rope straight-arm pulldown","Machine pullover","Dumbbell pullover (light)"]]],
+["BICEPS",[
+["EZ-bar curl","2 × 8–12","Biceps brachii (both heads)","Brachialis; brachioradialis","EZ bar","Curl without moving the upper arms forward; lower under control.","Avoid hip drive and excessive wrist bending.","Cable curl","Dumbbell supinated curl","Machine preacher curl"],
+["Incline dumbbell curl","2 × 10–12","Biceps (long head emphasis through shoulder position)","Brachialis","Dumbbells / incline bench","Let arms hang slightly behind torso and curl without swinging.","Use a comfortable shoulder stretch; do not force the bottom position.","Bayesian cable curl","Standing alternating curl","Preacher curl"]]]]},
+{title:"Legs + Abs",focus:"Squat pattern, hip extension, knee flexion and core",duration:"65–80 min",warm:["5 min easy bike","Bodyweight squats × 10","Leg swings × 10 each direction","Glute bridges × 12","Ankle rocks × 10 per side","Before squat: 2–4 progressive warm-up sets"],cool:["Standing quadriceps stretch — 20–30 sec per side","Seated hamstring stretch — 20–30 sec per side","Figure-four glute stretch — 20–30 sec per side","Calf wall stretch — 20–30 sec per side"],note:"No Romanian deadlifts. Hip thrusts and leg curls cover glute and hamstring work without requiring an RDL. Use a comfortable squat depth and stable foot position.",groups:[
+["LEGS",[
+["Smith machine squat","3 × 8–12","Quadriceps","Glutes; adductors; trunk stabilizers","Smith machine","Set feet where you can squat comfortably. Descend under control and drive through the whole foot.","Do not force depth if your pelvis tucks or heels lift.","Hack squat machine","Leg press","Goblet squat"],
+["Leg press","2 × 10–12","Quadriceps","Glutes; adductors","Leg press machine","Lower until you reach a controlled depth without your lower back rolling off the pad.","Do not lock knees hard or let them collapse inward.","Hack squat","Smith squat","Belt squat"],
+["Smith machine hip thrust","3 × 8–12","Gluteus maximus","Hamstrings; adductors","Smith machine / bench","Position the bench around shoulder-blade level. Drive hips up and pause with ribs down.","Avoid overextending the lower back at the top.","Hip thrust machine","Glute drive machine","Dumbbell glute bridge"],
+["Seated leg curl","3 × 10–15","Hamstrings (knee flexion)","Gastrocnemius assists","Leg curl machine","Align knees with machine pivot and curl smoothly; control the return.","Avoid lifting hips or bouncing the stack.","Lying leg curl","Single-leg seated curl","Standing leg curl"],
+["Leg extension","2 × 12–15","Quadriceps (especially rectus femoris and vasti)","—","Leg extension machine","Extend smoothly and lower slowly within a pain-free range.","Do not kick the weight or slam the stack.","Single-leg extension","Supported sissy squat (only if comfortable)","Spanish squat"],
+["Seated calf raise","3 × 12–20","Soleus","Gastrocnemius","Seated calf machine","Use a full comfortable stretch and rise onto the ball of the foot; pause briefly.","Avoid bouncing through partial reps.","Standing calf raise","Leg press calf press","Smith standing calf raise"]]],
+["ABS",[
+["Decline weighted crunch","3 × 10–15","Rectus abdominis","Obliques assist","Decline bench / weight plate","Curl ribs toward pelvis; think of shortening the abdomen rather than sitting all the way up.","Do not pull on your neck or use momentum.","Cable crunch","Machine crunch","Floor weighted crunch"],
+["Reverse crunch","2 × 10–15","Rectus abdominis (pelvic curl emphasis)","Hip flexors assist","Mat / bench","Curl pelvis gently off the floor; lower slowly without swinging legs.","Avoid using momentum or aggressively swinging the hips.","Captain's chair knee raise","Hanging knee raise","Dead bug"]]]]},
+{title:"Shoulders + Traps",focus:"Lateral and rear delts, controlled pressing and upper traps",duration:"55–70 min",warm:["4–5 min easy cycle or walk","Shoulder circles × 10 each way","Band external rotations × 12","Very light lateral raises × 12","Before shoulder press: 2 light ramp-up sets"],cool:["Cross-body rear-shoulder stretch — 20–30 sec per side","Gentle overhead shoulder stretch — 20 sec per side","Upper-trap side stretch — 20 sec per side"],note:"Front delts already receive substantial work from chest pressing. This session emphasizes lateral and rear delts, with a modest amount of overhead pressing.",groups:[
+["SHOULDERS",[
+["Machine shoulder press","2 × 8–10","Anterior deltoid","Lateral deltoid; triceps","Shoulder press machine","Set handles around shoulder height and press in a comfortable plane without arching your back.","Do not force a deep bottom position if shoulders feel pinched.","Neutral-grip dumbbell press","Smith machine shoulder press","Landmine press"],
+["Cable lateral raise","3 × 12–20","Lateral deltoid","Supraspinatus assists","Cable / single handle","Raise arm out to the side in a comfortable arc; lead with elbow and control down.","Avoid swinging or shrugging to lift the weight.","Dumbbell lateral raise","Lateral raise machine","Lean-away cable lateral raise"],
+["Reverse pec deck","3 × 12–20","Posterior deltoid","Rhomboids; middle trapezius","Reverse pec deck","Set handles around shoulder height and open arms while keeping chest against pad.","Do not turn it into a heavy row.","Cable rear-delt fly","Chest-supported rear-delt raise","Face pull"],
+["Dumbbell shrug","2 × 10–15","Upper trapezius","Levator scapulae","Dumbbells","Elevate shoulders vertically, pause briefly and lower with control.","Do not roll shoulders in circles or bounce.","Smith machine shrug","Cable shrug","Machine shrug"]]]]},
+{title:"Arms + Conditioning",focus:"Direct biceps and triceps work plus low-impact cardio",duration:"55–70 min",warm:["5 min easy treadmill or cycle","Elbow flexion/extension × 15","Light cable curls × 15","Light pushdowns × 15","One easy ramp-up set for the first curl and extension"],cool:["Gentle biceps wall stretch — 20 sec per side","Overhead triceps stretch — 20 sec per side","Easy walk until breathing settles — 3–5 min"],note:"This is the dedicated arm day. Keep technique strict and leave 1–2 reps in reserve on most sets. Conditioning should not compromise recovery from leg day.",groups:[
+["BICEPS",[
+["Preacher curl machine or EZ-bar preacher curl","3 × 8–12","Biceps brachii (short-head emphasis from shoulder position)","Brachialis","Preacher machine / EZ bar","Keep upper arms supported and curl through a controlled range. Lower without relaxing abruptly.","Do not force the elbow into full extension under heavy load.","EZ-bar standing curl","Cable preacher curl","Dumbbell concentration curl"],
+["Hammer curl","2 × 10–15","Brachialis and brachioradialis","Biceps brachii","Dumbbells / rope cable","Keep palms facing each other and curl without rotating the wrist.","Avoid swinging the torso or drifting elbows forward.","Rope cable hammer curl","Cross-body hammer curl","Neutral-grip machine curl"]]],
+["TRICEPS",[
+["Overhead cable triceps extension","3 × 10–15","Triceps long head (shoulder-flexed position)","Lateral and medial heads","Cable / rope","Keep upper arms elevated and extend elbows; allow a controlled stretch behind the head.","Avoid flaring ribs or arching the lower back.","Single dumbbell overhead extension","Single-arm cable overhead extension","Overhead extension machine"],
+["Cable triceps pushdown","2 × 10–15","Triceps lateral and medial heads","Long head","Cable / rope or bar","Keep elbows close to sides and extend smoothly.","Avoid shoulder movement and body swing.","V-bar pushdown","Single-arm reverse-grip pushdown","Triceps press machine"]]],
+["CONDITIONING",[
+["Incline treadmill walk or stationary bike","1 × 12–20 min","Cardiovascular system; lower-body endurance","Calves and glutes may assist","Treadmill / bike","Use a pace where breathing is elevated but you can still speak in short sentences.","Keep intensity moderate. Reduce duration if it affects recovery.","Elliptical","Outdoor brisk walk","Easy rowing machine"]]]]}
+];
+let activeDay=0, completed=JSON.parse(localStorage.getItem("liftlab_completed")||"{}"), logs=JSON.parse(localStorage.getItem("liftlab_logs")||"[]"), substitutions={};
+const allExercises=()=>days.flatMap((d,di)=>d.groups.flatMap(g=>g[1].map(e=>({...e,day:di,group:g[0]}))));
+function save(){localStorage.setItem("liftlab_completed",JSON.stringify(completed));localStorage.setItem("liftlab_logs",JSON.stringify(logs))}
+function renderDays(){document.getElementById("dayButtons").innerHTML=days.map((d,i)=>`<button class="day-select ${i===activeDay?'active':''}" data-day="${i}"><small>DAY ${i+1}</small><strong>${d.title}</strong></button>`).join("");document.querySelectorAll(".day-select").forEach(b=>b.onclick=()=>{activeDay=+b.dataset.day;renderDays();renderDay()})}
+function renderDay(){const d=days[activeDay];let content=`<div class="day-card"><div class="day-top"><div><div class="eyebrow">Day ${activeDay+1}</div><h2>${d.title}</h2><p>${d.focus}</p></div><button class="btn ${completed[activeDay]?'primary':''}" id="completeDay">${completed[activeDay]?'✓ Completed':'Mark day complete'}</button></div><div class="day-meta"><span class="tag">${d.duration}</span><span class="tag">${d.groups.reduce((n,g)=>n+g[1].length,0)} exercises</span><span class="tag">Target effort: 1–3 RIR</span></div><div class="split-grid">`;
+d.groups.forEach((g,gi)=>{content+=`<div><div class="subhead">${g[0]}</div>`;g[1].forEach((e,ei)=>{const id=`${activeDay}-${gi}-${ei}`,chosen=substitutions[id]||e[0];content+=`<div class="exercise" id="ex-${id}"><div class="exercise-head" data-open="${id}"><div class="num">${ei+1}</div><div class="ex-title"><strong>${chosen}</strong><small>${e[2]} · ${e[4]}</small></div><div class="sets">${e[1]}</div><div class="chev">⌄</div></div><div class="exercise-body"><div class="muscles"><span class="muscle">Primary: ${e[2]}</span><span class="muscle">Secondary: ${e[3]}</span></div><div class="detail-grid"><div class="detail"><small>Working sets</small><b>${e[1].split(" × ")[0]}</b></div><div class="detail"><small>Reps / duration</small><b>${e[1].split(" × ")[1]}</b></div><div class="detail"><small>Rest</small><b>${e[1].includes("min")?"As needed":"60–180 sec"}</b></div></div><p><b>How to perform:</b> ${e[5]}</p><p><b>Form cue:</b> ${e[6]}</p><p><b>Equipment:</b> ${e[4]}</p><p><b>Exercise alternatives:</b> Choose a practical substitute if equipment is busy or the movement does not suit you. Alternatives may shift emphasis slightly.</p><div class="alt-list">${e.slice(7).map(a=>`<button class="alt ${chosen===a?'selected':''}" data-alt="${id}" data-name="${a}">${a}</button>`).join("")}</div><div class="log-row"><label>Weight <input type="number" step="0.5" min="0" id="weight-${id}" placeholder="kg"></label><label>Reps <input type="number" min="0" id="reps-${id}" placeholder="reps"></label><button class="btn" data-log="${id}" data-name="${chosen}">Save set</button></div></div></div>`});content+="</div>"});content+=`</div><div class="routine-box"><h3>Warm-up · 7–10 minutes plus ramp-up sets</h3><ul>${d.warm.map(x=>`<li>${x}</li>`).join("")}</ul></div><div class="routine-box"><h3>Cool-down · 3–5 minutes (optional)</h3><ul>${d.cool.map(x=>`<li>${x}</li>`).join("")}</ul></div><div class="note">${d.note}</div></div>`;document.getElementById("dayContent").innerHTML=content;
+document.getElementById("completeDay").onclick=()=>{completed[activeDay]=!completed[activeDay];save();renderDay();renderProgress();if(currentUser){markScheduleStatus(completed[activeDay]?"completed":"planned").catch(e=>authMessage("Local status saved; cloud schedule sync failed: "+(e.message||e),true));}};
+document.querySelectorAll("[data-open]").forEach(el=>el.onclick=()=>document.getElementById("ex-"+el.dataset.open).classList.toggle("open"));
+document.querySelectorAll("[data-alt]").forEach(el=>el.onclick=()=>{substitutions[el.dataset.alt]=el.dataset.name;renderDay();document.getElementById("ex-"+el.dataset.alt).classList.add("open")});
+document.querySelectorAll("[data-log]").forEach(el=>el.onclick=()=>{let id=el.dataset.log,w=document.getElementById("weight-"+id).value,r=document.getElementById("reps-"+id).value;if(!w||!r){alert("Enter both weight and reps first.");return}logs.unshift({name:el.dataset.name,weight:w,reps:r,date:new Date().toLocaleDateString()});logs=logs.slice(0,100);save();renderProgress();if(currentUser){saveSetToCloud(el.dataset.name,w,r,activeDay).then(()=>authMessage("Set saved to your account.")).catch(e=>authMessage("Local set saved; cloud sync failed: "+(e.message||e),true));}el.textContent="Saved ✓";});
+}
+function renderOverview(){document.getElementById("overviewCards").innerHTML=days.map((d,i)=>`<div class="overview-card"><div class="eyebrow">Day ${i+1}</div><h3>${d.title}</h3><p>${d.focus}</p><span class="tag">${d.duration}</span></div>`).join("");let volumes={"Chest":8,"Back":10,"Shoulders":8,"Biceps":9,"Triceps":7,"Quadriceps":7,"Hamstrings":3,"Glutes":3,"Calves":3,"Abs":5};document.getElementById("volumeBars").innerHTML=Object.entries(volumes).map(([k,v])=>`<div class="volume-row"><span>${k}</span><div class="bar"><i style="width:${v/12*100}%"></i></div><b>${v}</b></div>`).join("")}
+function renderLibrary(){let q=(document.getElementById("searchExercise").value||"").toLowerCase(),f=document.getElementById("filterMuscle").value;let items=allExercises().filter(e=>(!f||e.group.toLowerCase().includes(f.toLowerCase())||e[2].toLowerCase().includes(f.toLowerCase()))&&[e[0],e[2],e[3],e[4],e[5]].join(" ").toLowerCase().includes(q));document.getElementById("libraryList").innerHTML=items.map(e=>`<div class="library-item"><strong>${e[0]}</strong><p>${e[2]}</p><p>Secondary: ${e[3]}</p><p>${e[1]} · ${e[4]} · Day ${e.day+1}</p></div>`).join("")||'<div class="empty">No matching exercises.</div>'}
+function renderProgress(){let count=Object.values(completed).filter(Boolean).length,pct=Math.round(count/5*100);document.getElementById("completionNum").textContent=pct+"%";document.getElementById("completionBar").style.width=pct+"%";document.getElementById("completionText").textContent=count+" of 5 workout days marked complete.";document.getElementById("historyWrap").innerHTML=logs.length?`<table class="history"><thead><tr><th>Date</th><th>Exercise</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${logs.slice(0,30).map(l=>`<tr><td>${l.date}</td><td>${l.name}</td><td>${l.weight} kg</td><td>${l.reps}</td></tr>`).join("")}</tbody></table>`:'<div class="empty">No exercise logs yet. Open an exercise and save your first set.</div>'}
+document.querySelectorAll("#mainNav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#mainNav button").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.view).classList.add("active")});
+document.getElementById("themeBtn").onclick=()=>{let light=document.documentElement.dataset.theme!=="light";document.documentElement.dataset.theme=light?"light":"dark";localStorage.setItem("liftlab_theme",light?"light":"dark");document.getElementById("themeBtn").textContent=light?"☾ Dark mode":"☼ Light mode"};
+document.getElementById("searchExercise").addEventListener("input",renderLibrary);document.getElementById("filterMuscle").addEventListener("change",renderLibrary);
+document.getElementById("resetWeek").onclick=()=>{if(confirm("Reset all five workout completion checkmarks?")){completed={};save();renderProgress();renderDay()}};
+document.getElementById("exportBtn").onclick=()=>{let blob=new Blob([JSON.stringify({completed,logs},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="liftlab-progress.json";a.click();URL.revokeObjectURL(a.href)};
+let savedTheme=localStorage.getItem("liftlab_theme");if(savedTheme){document.documentElement.dataset.theme=savedTheme;document.getElementById("themeBtn").textContent=savedTheme==="light"?"☾ Dark mode":"☼ Light mode"}
+
+// ---------------- LiftLab cloud integration ----------------
+// The Supabase publishable key is designed for browser use. Never put a secret/service-role key here.
+const SUPABASE_URL = "https://tahkuzmoftqqoichzgpj.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_X4HjUp_jEnO2ED9V5jh0DA_K51HHoli";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let currentUser = null;
+let cloudPlanId = null;
+let cloudDayIds = {};
+let cloudWeightEntries = [];
+
+function authMessage(message, isError=false) {
+  const el = document.getElementById("authMessage");
+  if (el) { el.textContent = message; el.style.color = isError ? "var(--danger)" : "var(--muted)"; }
+}
+function setAccountUI(user) {
+  currentUser = user || null;
+  document.getElementById("accountStatus").textContent = user
+    ? `Signed in as ${user.email} · Cloud sync enabled`
+    : "Not signed in — progress is stored on this device only.";
+  document.getElementById("authForm").style.display = user ? "none" : "flex";
+  document.getElementById("signOutBtn").style.display = user ? "inline-block" : "none";
+}
+async function signIn() {
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+  if (!email || !password) return authMessage("Enter your email and password.", true);
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) authMessage(error.message, true);
+}
+async function signUp() {
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+  if (!email || password.length < 6) return authMessage("Enter a valid email and a password with at least 6 characters.", true);
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  if (error) return authMessage(error.message, true);
+  if (!data.session) authMessage("Account created. Check your email to confirm your address, then sign in.");
+  else authMessage("Account created. Cloud sync is being prepared.");
+}
+async function signOut() {
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) authMessage(error.message, true);
+  else {
+    setAccountUI(null);
+    cloudPlanId = null; cloudDayIds = {};
+    authMessage("Signed out. This device's locally saved data remains available.");
+  }
+}
+document.getElementById("signInBtn").addEventListener("click", signIn);
+document.getElementById("signUpBtn").addEventListener("click", signUp);
+document.getElementById("signOutBtn").addEventListener("click", signOut);
+
+function splitPrescription(value) {
+  const parts = String(value).split("×").map(x => x.trim());
+  return { sets: Math.max(1, parseInt(parts[0], 10) || 1), reps: parts.slice(1).join(" × ") || "8-12" };
+}
+async function ensureCloudPlan() {
+  if (!currentUser) return;
+  const { data: existing, error } = await supabaseClient
+    .from("workout_plans").select("id,plan_name").eq("user_id", currentUser.id).maybeSingle();
+  if (error) throw error;
+  if (existing) {
+    cloudPlanId = existing.id;
+    const { data: dayRows, error: dayError } = await supabaseClient
+      .from("workout_days").select("id,day_order").eq("plan_id", cloudPlanId).order("day_order");
+    if (dayError) throw dayError;
+    cloudDayIds = Object.fromEntries((dayRows || []).map(row => [row.day_order - 1, row.id]));
+    return;
+  }
+
+  // First-time sign-in: create a private copy of the current five-day LiftLab template.
+  const { data: plan, error: planError } = await supabaseClient
+    .from("workout_plans")
+    .insert({ user_id: currentUser.id, plan_name: "LiftLab 5-Day Plan", description: "Personal copy of the LiftLab starter plan" })
+    .select("id").single();
+  if (planError) throw planError;
+  cloudPlanId = plan.id;
+
+  for (let di = 0; di < days.length; di++) {
+    const d = days[di];
+    const { data: dayRow, error: dayError } = await supabaseClient
+      .from("workout_days")
+      .insert({
+        plan_id: cloudPlanId, user_id: currentUser.id, day_name: d.title,
+        day_order: di + 1, day_type: "workout",
+        notes: d.note, warmup: d.warm.join("\n"), cooldown: d.cool.join("\n")
+      }).select("id").single();
+    if (dayError) throw dayError;
+    cloudDayIds[di] = dayRow.id;
+
+    let order = 0;
+    const exerciseRows = [];
+    for (const group of d.groups) {
+      for (const ex of group[1]) {
+        order++;
+        const prescription = splitPrescription(ex[1]);
+        exerciseRows.push({
+          day_id: dayRow.id, user_id: currentUser.id,
+          exercise_name: ex[0],
+          target_muscles: [group[0], ex[2], ex[3]].filter(Boolean),
+          sets: prescription.sets, reps: prescription.reps,
+          instructions: `How to perform: ${ex[5]}\nForm cue: ${ex[6]}\nEquipment: ${ex[4]}`,
+          alternatives: ex.slice(7), exercise_order: order
+        });
+      }
+    }
+    if (exerciseRows.length) {
+      const { error: exError } = await supabaseClient.from("workout_exercises").insert(exerciseRows);
+      if (exError) throw exError;
+    }
+  }
+  authMessage("Your private LiftLab starter plan has been copied to your account.");
+}
+async function saveSetToCloud(exerciseName, weight, reps, dayIndex) {
+  if (!currentUser) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const dayName = days[dayIndex]?.title || "Workout";
+  let { data: session, error } = await supabaseClient.from("workout_sessions")
+    .select("id").eq("user_id", currentUser.id).eq("workout_date", today)
+    .eq("workout_day", dayName).limit(1).maybeSingle();
+  if (error) throw error;
+  if (!session) {
+    const result = await supabaseClient.from("workout_sessions")
+      .insert({ user_id: currentUser.id, workout_date: today, workout_day: dayName })
+      .select("id").single();
+    if (result.error) throw result.error;
+    session = result.data;
+  }
+  let { data: exerciseLog, error: logError } = await supabaseClient.from("exercise_logs")
+    .select("id").eq("user_id", currentUser.id).eq("session_id", session.id)
+    .eq("exercise_name", exerciseName).limit(1).maybeSingle();
+  if (logError) throw logError;
+  if (!exerciseLog) {
+    const result = await supabaseClient.from("exercise_logs")
+      .insert({ session_id: session.id, user_id: currentUser.id, exercise_name: exerciseName })
+      .select("id").single();
+    if (result.error) throw result.error;
+    exerciseLog = result.data;
+  }
+  const { data: existingSets, error: setsError } = await supabaseClient.from("workout_sets")
+    .select("set_number").eq("user_id", currentUser.id).eq("exercise_log_id", exerciseLog.id);
+  if (setsError) throw setsError;
+  const setNumber = (existingSets || []).length + 1;
+  const { error: insertError } = await supabaseClient.from("workout_sets").insert({
+    exercise_log_id: exerciseLog.id, user_id: currentUser.id,
+    set_number: setNumber, reps: Number(reps), weight_kg: Number(weight)
+  });
+  if (insertError) throw insertError;
+}
+async function saveBodyWeight() {
+  if (!currentUser) return authMessage("Sign in first to save body weight to your account.", true);
+  const weight = Number(document.getElementById("bodyWeightInput").value);
+  const date = document.getElementById("bodyWeightDate").value || new Date().toISOString().slice(0,10);
+  if (!weight || weight <= 0) return authMessage("Enter a valid body weight.", true);
+  const { error } = await supabaseClient.from("body_weight_logs").insert({
+    user_id: currentUser.id, weight_kg: weight, recorded_on: date
+  });
+  if (error) return authMessage(error.message, true);
+  document.getElementById("bodyWeightInput").value = "";
+  await loadBodyWeights();
+  authMessage("Body-weight entry saved.");
+}
+async function loadBodyWeights() {
+  if (!currentUser) {
+    document.getElementById("bodyWeightHistory").innerHTML = '<div class="empty">Sign in to save and view cloud body-weight history.</div>';
+    return;
+  }
+  const { data, error } = await supabaseClient.from("body_weight_logs")
+    .select("id,weight_kg,recorded_on,notes").eq("user_id", currentUser.id)
+    .order("recorded_on", { ascending: false }).limit(100);
+  if (error) return authMessage(error.message, true);
+  cloudWeightEntries = data || [];
+  document.getElementById("bodyWeightHistory").innerHTML = cloudWeightEntries.length
+    ? `<table class="history"><thead><tr><th>Date</th><th>Weight</th></tr></thead><tbody>${cloudWeightEntries.map(x => `<tr><td>${x.recorded_on}</td><td>${Number(x.weight_kg).toFixed(1)} kg</td></tr>`).join("")}</tbody></table>`
+    : '<div class="empty">No body-weight entries yet.</div>';
+}
+document.getElementById("saveBodyWeight").addEventListener("click", saveBodyWeight);
+document.getElementById("bodyWeightDate").value = new Date().toISOString().slice(0,10);
+
+async function markScheduleStatus(status) {
+  if (!currentUser || !cloudPlanId || !cloudDayIds[activeDay]) return;
+  const date = new Date().toISOString().slice(0,10);
+  const { error } = await supabaseClient.from("workout_schedule").insert({
+    plan_id: cloudPlanId, user_id: currentUser.id, workout_day_id: cloudDayIds[activeDay],
+    original_date: date, scheduled_date: date, workout_name: days[activeDay].title,
+    status, completed_at: status === "completed" ? new Date().toISOString() : null
+  });
+  if (error) throw error;
+}
+async function onAuthenticated(user) {
+  setAccountUI(user);
+  if (!user) { cloudPlanId = null; cloudDayIds = {}; await loadBodyWeights(); return; }
+  try {
+    await ensureCloudPlan();
+    await loadBodyWeights();
+    authMessage("Signed in. Your plan and body-weight tracking are connected to Supabase.");
+  } catch (e) {
+    authMessage("Cloud setup issue: " + (e.message || e), true);
+  }
+}
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  // Defer network work until after the auth callback to avoid blocking the auth event.
+  setTimeout(() => onAuthenticated(session?.user || null), 0);
+});
+(async () => {
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) authMessage(error.message, true);
+  await onAuthenticated(data?.session?.user || null);
+})();
+
+renderDays();renderDay();renderOverview();renderLibrary();renderProgress();
+</script>
+</body></html>
