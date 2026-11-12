@@ -1,0 +1,63 @@
+/* Small finishing touches for mobile devices and accessibility. */
+:root {
+  color-scheme: light;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 600px) {
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .main {
+    min-width: 0;
+  }
+
+  .content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .panel, .card, .feature-card {
+    max-width: 100%;
+  }
+
+  input, select, textarea {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
