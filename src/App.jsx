@@ -800,7 +800,7 @@ function ExerciseModal({ user, onClose, onCreated }) {
 
     setSaving(true)
 
-    const { error } = await supabase
+    const { data: createdExercise, error } = await supabase
       .from('exercise_library')
       .insert({
         owner_id: user.id,
@@ -819,6 +819,8 @@ function ExerciseModal({ user, onClose, onCreated }) {
         muscle_activation: activationDetails.split('\n').map(line => line.split('|').map(part => part.trim())).filter(parts => parts.length >= 3 && parts[0] && parts[1]).map(parts => ({ muscle: parts[0], region: parts[1], level: ['high', 'moderate', 'low'].includes((parts[2] || '').toLowerCase()) ? parts[2].toLowerCase() : 'moderate', role: (parts[3] || 'primary').toLowerCase() === 'secondary' ? 'secondary' : 'primary' })),
         is_builtin: false,
       })
+      .select('*')
+      .single()
 
     setSaving(false)
 
@@ -828,7 +830,7 @@ function ExerciseModal({ user, onClose, onCreated }) {
     }
 
     onClose()
-    onCreated()
+    onCreated(createdExercise)
   }
 
   return (
@@ -1292,6 +1294,7 @@ function PlanEditor({ plan, user, onBack }) {
   const [busy, setBusy] = useState(false)
   const [dayName, setDayName] = useState('')
   const [addingExerciseTo, setAddingExerciseTo] = useState(null)
+  const [customExerciseDay, setCustomExerciseDay] = useState(null)
   const [confirmAction, setConfirmAction] = useState(null)
 
   const load = async () => {
@@ -1402,8 +1405,8 @@ function PlanEditor({ plan, user, onBack }) {
     },
   })
 
-  const addExercise = async (day, exerciseId) => {
-    const exercise = library.find(x => x.id === exerciseId)
+  const addExercise = async (day, exerciseId, exerciseOverride = null) => {
+    const exercise = exerciseOverride || library.find(x => x.id === exerciseId)
     if (!exercise) return
 
     const current = planExercises[day.id] || []
@@ -1425,6 +1428,7 @@ function PlanEditor({ plan, user, onBack }) {
       alert('Unable to add exercise: ' + error.message)
     } else {
       setAddingExerciseTo(null)
+      setCustomExerciseDay(null)
       load()
     }
   }
@@ -1549,6 +1553,13 @@ function PlanEditor({ plan, user, onBack }) {
                         </option>
                       ))}
                   </select>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setCustomExerciseDay(day)}
+                  >
+                    <Plus size={15} /> Create custom
+                  </button>
                 </div>
               )}
 
@@ -1614,6 +1625,16 @@ function PlanEditor({ plan, user, onBack }) {
             </section>
           ))}
         </div>
+      )}
+      {customExerciseDay && (
+        <ExerciseModal
+          user={user}
+          onClose={() => setCustomExerciseDay(null)}
+          onCreated={exercise => {
+            setLibrary(current => [...current, exercise])
+            addExercise(customExerciseDay, exercise.id, exercise)
+          }}
+        />
       )}
       {confirmAction && <ConfirmDialog
         title={confirmAction.title}
