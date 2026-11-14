@@ -96,3 +96,7 @@
 .ba-danger-button { padding: 10px 14px; color: white; background: #dc4545; border: 1px solid #dc4545; border-radius: 9px; font-weight: 650; font-size: 12px; }
 @media (max-width: 1050px) { .ba-stats-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .ba-main-grid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .ba-welcome { align-items: flex-start; } .ba-welcome > button { padding: 9px; font-size: 11px; } .ba-stats-grid { gap: 9px; } .ba-stat-card { padding: 12px; gap: 9px; } .ba-stat-icon { width: 34px; height: 34px; } .ba-stat-copy strong { font-size: 17px; } .ba-stat-copy small { font-size: 9px; } .ba-panel { padding: 14px; } .ba-weight-form { padding: 11px; } .ba-calendar-grid { gap: 4px; } .ba-calendar-day, .ba-calendar-blank { border-radius: 7px; } .ba-calendar-legend { gap: 8px; } .ba-modal { padding: 17px; } .ba-modal-actions { flex-wrap: wrap; } }
+
+/* Keep the native date control aligned with the weight field in the entry grid. */
+.ba-weight-form label { min-width: 0; }
+.ba-weight-form input[type="date"] { display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
