@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Dumbbell, CalendarDays, ChartNoAxesCombined,
   UserRound, Settings, Plus, Flame, TrendingUp, ChevronRight, Scale,
@@ -65,7 +66,39 @@ useEffect(() => {
     cancelled = true
   }
 }, [user?.id, user?.user_metadata?.display_name, user?.email])
-  const [activePage, setActivePage] = useState('Dashboard')
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [activePage, setActivePageState] = useState('Dashboard')
+  const pagePaths = {
+    Dashboard: '/dashboard',
+    'My Plans': '/plans',
+    'Workout Logger': '/workout',
+    Exercises: '/exercises',
+    Progress: '/progress',
+    'Body & Attendance': '/body',
+    Profile: '/profile',
+    Settings: '/settings',
+  }
+
+  useEffect(() => {
+    if (location.pathname === '/') {
+      setActivePageState('Dashboard')
+      return
+    }
+
+    const matchingPage = Object.entries(pagePaths).find(([, path]) => path === location.pathname)
+    if (matchingPage) {
+      setActivePageState(matchingPage[0])
+    } else {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [location.pathname])
+
+  const setActivePage = page => {
+    setActivePageState(page)
+    const nextPath = pagePaths[page] || '/dashboard'
+    if (location.pathname !== nextPath) navigate(nextPath)
+  }
   const [appearance, setAppearance] = useState(
     () => localStorage.getItem('liftlab-appearance') || 'dark'
   )
