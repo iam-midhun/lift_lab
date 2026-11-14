@@ -4,7 +4,12 @@
    ========================================= */
 
 /* Theme variables */
+#root {
+  min-height: 100vh;
+}
+
 .app {
+  color-scheme: dark;
   --bg: #101210;
   --surface: #191c19;
   --surface2: #222622;
@@ -26,6 +31,7 @@
 }
 
 .app.light {
+  color-scheme: light;
   --bg: #f4f6fa;
   --surface: #ffffff;
   --surface2: #f1f4f9;
