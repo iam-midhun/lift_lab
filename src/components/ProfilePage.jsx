@@ -58,7 +58,7 @@ function ProfileStat({ icon: Icon, label, value, detail }) {
   )
 }
 
-export default function ProfilePage({ user }) {
+export default function ProfilePage({ user, onProfileUpdated }) {
   const [profile, setProfile] = useState(EMPTY_PROFILE)
   const [draft, setDraft] = useState(EMPTY_PROFILE)
   const [editing, setEditing] = useState(false)
@@ -158,6 +158,7 @@ export default function ProfilePage({ user }) {
       if (saveError) throw saveError
       setProfile({ ...draft, height_cm: height ?? '' })
       setDraft({ ...draft, height_cm: height ?? '' })
+      onProfileUpdated?.(payload.display_name)
       setEditing(false)
       setMessage('Your profile has been updated.')
     } catch (err) {
