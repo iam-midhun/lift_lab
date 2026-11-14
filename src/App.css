@@ -20,6 +20,12 @@
   --accent-soft: rgba(59, 130, 246, 0.13);
   --success: #43c985;
   --danger: #ef6464;
+  --primary: var(--accent);
+  --text-muted: var(--muted);
+  --panel-bg: var(--surface);
+  --card-bg: var(--surface);
+  --input-bg: var(--surface2);
+  --border-color: var(--border);
   --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 
   min-height: 100vh;
