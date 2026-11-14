@@ -1,12 +1,22 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import './responsive-final.css'
 import App from './App.jsx'
 
+// Restore deep links redirected through GitHub Pages' 404 fallback.
+const redirectRoute = new URLSearchParams(window.location.search).get('route')
+if (redirectRoute) {
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
+  window.history.replaceState(null, '', `${basePath}${redirectRoute}`)
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+      <App />
+    </BrowserRouter>
   </StrictMode>,
 )
 
