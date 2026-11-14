@@ -291,11 +291,13 @@ export default function ProgressPage({ user }) {
     })
   }, [exerciseProgress])
 
+  const activeExercise = selectedExercise || exerciseProgress[0]?.name || ''
+
   const chartData = useMemo(() => {
-    if (!selectedExercise) return []
+    if (!activeExercise) return []
 
     const exercise = exerciseProgress.find(
-      item => item.name === selectedExercise
+      item => item.name === activeExercise
     )
 
     if (!exercise) return []
@@ -305,7 +307,7 @@ export default function ProgressPage({ user }) {
       weight: record.weight,
       estimatedMax: Number(record.estimatedMax.toFixed(1))
     }))
-  }, [exerciseProgress, selectedExercise])
+  }, [exerciseProgress, activeExercise])
 
   const selectedSessionExercises = useMemo(() => {
     if (!selectedSession) return []
@@ -527,7 +529,7 @@ export default function ProgressPage({ user }) {
 
                       <select
                         id="progress-exercise"
-                        value={selectedExercise || exerciseProgress[0].name}
+                        value={activeExercise}
                         onChange={event =>
                           setSelectedExercise(event.target.value)
                         }
@@ -552,18 +554,19 @@ export default function ProgressPage({ user }) {
                           />
                           <XAxis
                             dataKey="date"
-                            tick={{ fontSize: 11 }}
+                            tick={{ fontSize: 11, fill: 'var(--muted)' }}
                           />
                           <YAxis
                             tick={{ fontSize: 11 }}
                             width={45}
+                            tick={{ fontSize: 11, fill: 'var(--muted)' }}
                           />
                           <Tooltip />
                           <Line
                             type="monotone"
                             dataKey="weight"
                             name="Weight (kg)"
-                            stroke="var(--primary)"
+                            stroke="var(--accent)"
                             strokeWidth={3}
                             dot={{ r: 4 }}
                             activeDot={{ r: 6 }}
