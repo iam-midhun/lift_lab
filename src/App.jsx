@@ -21,6 +21,31 @@ import BodyAttendancePage from './components/BodyAttendancePage'
 import ProfilePage from './components/ProfilePage'
 import ConfirmDialog from './components/ConfirmDialog'
 
+const exerciseBodyPartOrder = [
+  'biceps',
+  'chest',
+  'triceps',
+  'back',
+  'shoulders',
+  'quadriceps',
+  'hamstrings',
+  'glutes',
+  'calves',
+  'abdominals',
+  'abs',
+  'forearms',
+  'traps',
+  'core',
+]
+
+const getExerciseBodyPartRank = exercise => {
+  const muscles = (exercise.primary_muscles || []).map(muscle => String(muscle).toLowerCase())
+  const ranks = muscles
+    .map(muscle => exerciseBodyPartOrder.indexOf(muscle))
+    .filter(rank => rank !== -1)
+  return ranks.length ? Math.min(...ranks) : exerciseBodyPartOrder.length
+}
+
 const themes = [
   { id: 'blue', name: 'Electric Blue', color: '#3B82F6', description: 'Modern and professional' },
   { id: 'orange', name: 'Inferno', color: '#F97316', description: 'Energetic orange' },
@@ -1513,11 +1538,16 @@ function PlanEditor({ plan, user, onBack }) {
                     onChange={e => e.target.value && addExercise(day, e.target.value)}
                   >
                     <option value="" disabled>Select an exercise...</option>
-                    {library.map(ex => (
-                      <option value={ex.id} key={ex.id}>
-                        {ex.name} — {(ex.primary_muscles || []).join(', ')}
-                      </option>
-                    ))}
+                    {[...library]
+                      .sort((a, b) => {
+                        const bodyPartDifference = getExerciseBodyPartRank(a) - getExerciseBodyPartRank(b)
+                        return bodyPartDifference || a.name.localeCompare(b.name)
+                      })
+                      .map(ex => (
+                        <option value={ex.id} key={ex.id}>
+                          {ex.name} — {(ex.primary_muscles || []).join(', ')}
+                        </option>
+                      ))}
                   </select>
                 </div>
               )}
