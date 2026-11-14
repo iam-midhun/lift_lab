@@ -1,4 +1,4 @@
-const CACHE_NAME = 'liftlab-shell-v1'
+const CACHE_NAME = 'liftlab-shell-v2'
 const APP_SHELL = [
   './',
   './index.html',
@@ -45,19 +45,21 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // Cache only same-origin static assets. API/data endpoints are not cached.
+  // Network-first keeps deployed app assets current, with cache fallback offline.
   if (/\.(?:js|css|svg|png|webp|ico|woff2?)$/i.test(url.pathname)) {
     event.respondWith(
-      caches.match(request).then(cached => {
-        const fresh = fetch(request).then(response => {
+      (async () => {
+        const cache = await caches.open(CACHE_NAME)
+        try {
+          const response = await fetch(request)
           if (response.ok) {
-            const copy = response.clone()
-            caches.open(CACHE_NAME).then(cache => cache.put(request, copy))
+            await cache.put(request, response.clone())
           }
           return response
-        })
-        return cached || fresh
-      })
+        } catch {
+          return (await cache.match(request)) || Response.error()
+        }
+      })()
     )
   }
 })
