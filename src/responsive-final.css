@@ -1,8 +1,4 @@
 /* Small finishing touches for mobile devices and accessibility. */
-:root {
-  color-scheme: light;
-}
-
 html {
   min-width: 320px;
   min-height: 100%;

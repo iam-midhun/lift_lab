@@ -64,7 +64,7 @@ useEffect(() => {
   return () => {
     cancelled = true
   }
-}, [user])
+}, [user?.id, user?.user_metadata?.display_name, user?.email])
   const [activePage, setActivePage] = useState('Dashboard')
   const [appearance, setAppearance] = useState(
     () => localStorage.getItem('liftlab-appearance') || 'dark'
@@ -310,7 +310,9 @@ function DashboardPage({ user, displayName, setActivePage }) {
       setError('')
       const today = new Date()
       const todayKey = dateKey(today)
-      const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`
+      const monthStartDate = new Date(today.getFullYear(), today.getMonth(), 1)
+      const monthStart = dateKey(monthStartDate)
+      const monthStartTimestamp = monthStartDate.toISOString()
       const monday = new Date(today)
       monday.setHours(0, 0, 0, 0)
       monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
@@ -322,7 +324,7 @@ function DashboardPage({ user, displayName, setActivePage }) {
           .eq('user_id', user.id).order('logged_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('workout_sessions').select('id,completed_at,status')
           .eq('user_id', user.id).eq('status', 'completed')
-          .gte('completed_at', `${monthStart}T00:00:00`).order('completed_at', { ascending: false }),
+           .gte('completed_at', monthStartTimestamp).order('completed_at', { ascending: false }),
         supabase.from('workout_plans').select('id,name,description')
           .eq('user_id', user.id).eq('is_active', true).maybeSingle(),
         supabase.from('workout_sessions').select('id,completed_at,session_date')

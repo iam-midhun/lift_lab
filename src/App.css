@@ -4,7 +4,12 @@
    ========================================= */
 
 /* Theme variables */
+#root {
+  min-height: 100vh;
+}
+
 .app {
+  color-scheme: dark;
   --bg: #101210;
   --surface: #191c19;
   --surface2: #222622;
@@ -15,6 +20,12 @@
   --accent-soft: rgba(59, 130, 246, 0.13);
   --success: #43c985;
   --danger: #ef6464;
+  --primary: var(--accent);
+  --text-muted: var(--muted);
+  --panel-bg: var(--surface);
+  --card-bg: var(--surface);
+  --input-bg: var(--surface2);
+  --border-color: var(--border);
   --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 
   min-height: 100vh;
@@ -26,6 +37,7 @@
 }
 
 .app.light {
+  color-scheme: light;
   --bg: #f4f6fa;
   --surface: #ffffff;
   --surface2: #f1f4f9;
