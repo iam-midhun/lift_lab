@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Dumbbell, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 
+const getAppRedirectUrl = () => new URL(import.meta.env.BASE_URL, window.location.origin).toString()
+
 export default function Auth() {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -32,7 +34,7 @@ export default function Auth() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: getAppRedirectUrl(),
           },
         })
 
@@ -56,7 +58,7 @@ export default function Auth() {
 
       if (mode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin,
+          redirectTo: getAppRedirectUrl(),
         })
 
         if (error) throw error
