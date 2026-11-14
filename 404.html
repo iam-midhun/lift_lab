@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Redirecting to LiftLab</title>
+  </head>
+  <body>
+    <script>
+      // GitHub Pages serves this file for client-side routes.
+      // Preserve the requested path, query and hash, then let the app restore it.
+      const basePath = '/lift_lab'
+      const route = location.pathname.startsWith(basePath)
+        ? (location.pathname.slice(basePath.length) || '/') + location.search + location.hash
+        : '/'
+      location.replace(basePath + '/?route=' + encodeURIComponent(route))
+    </script>
+    <p>Opening LiftLab…</p>
+  </body>
+</html>
