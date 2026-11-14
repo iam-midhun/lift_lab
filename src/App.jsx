@@ -64,7 +64,7 @@ useEffect(() => {
   return () => {
     cancelled = true
   }
-}, [user])
+}, [user?.id, user?.user_metadata?.display_name, user?.email])
   const [activePage, setActivePage] = useState('Dashboard')
   const [appearance, setAppearance] = useState(
     () => localStorage.getItem('liftlab-appearance') || 'dark'
