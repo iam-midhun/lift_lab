@@ -645,6 +645,55 @@ export default function WorkoutLogger({ user }) {
     await loadInitialData()
   }
 
+  const deleteWorkoutSession = async workout => {
+    const workoutName = plans.find(plan => plan.id === workout.plan_id)?.name || 'Workout session'
+    const dateLabel = new Date(workout.started_at).toLocaleDateString()
+
+    if (!window.confirm(`Delete ${workoutName} from ${dateLabel}? This permanently removes the session and its exercise/set records.`)) return
+
+    try {
+      const { data: exercises, error: exerciseLookupError } = await supabase
+        .from('session_exercises')
+        .select('id')
+        .eq('session_id', workout.id)
+        .eq('user_id', user.id)
+
+      if (exerciseLookupError) throw exerciseLookupError
+
+      const exerciseIds = (exercises || []).map(item => item.id)
+
+      if (exerciseIds.length) {
+        const { error: setsError } = await supabase
+          .from('workout_sets')
+          .delete()
+          .in('session_exercise_id', exerciseIds)
+          .eq('user_id', user.id)
+
+        if (setsError) throw setsError
+
+        const { error: exercisesError } = await supabase
+          .from('session_exercises')
+          .delete()
+          .in('id', exerciseIds)
+          .eq('user_id', user.id)
+
+        if (exercisesError) throw exercisesError
+      }
+
+      const { error: sessionError } = await supabase
+        .from('workout_sessions')
+        .delete()
+        .eq('id', workout.id)
+        .eq('user_id', user.id)
+
+      if (sessionError) throw sessionError
+
+      setHistory(current => current.filter(item => item.id !== workout.id))
+    } catch (error) {
+      alert('Unable to delete workout session: ' + error.message)
+    }
+  }
+
   const completedSets = Object.values(sets).flat()
     .filter(item => item.completed).length
 
@@ -953,9 +1002,20 @@ export default function WorkoutLogger({ user }) {
                   <strong>{plans.find(plan => plan.id === item.plan_id)?.name || 'Workout session'}</strong>
                   <span>{new Date(item.started_at).toLocaleDateString()} · {new Date(item.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
-                <span className={`tag ${item.status === 'completed' ? 'green-tag' : ''}`}>
-                  {item.status === 'completed' ? 'Completed' : 'Cancelled'}
-                </span>
+                <div className="logger-history-actions">
+                  <span className={`tag ${item.status === 'completed' ? 'green-tag' : ''}`}>
+                    {item.status === 'completed' ? 'Completed' : 'Cancelled'}
+                  </span>
+                  <button
+                    className="icon-button danger-icon"
+                    type="button"
+                    title="Delete workout session"
+                    aria-label={`Delete workout from ${new Date(item.started_at).toLocaleDateString()}`}
+                    onClick={() => deleteWorkoutSession(item)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             ))
           )}
