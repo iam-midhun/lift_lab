@@ -25,6 +25,7 @@ import {
 } from 'recharts'
 
 import { supabase } from '../lib/supabase'
+import './ProgressPage.css'
 
 function formatDate(value) {
   if (!value) return '—'
