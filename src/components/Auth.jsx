@@ -1,7 +1,8 @@
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Dumbbell, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { Dumbbell, Mail, Lock, Eye, EyeOff, ArrowLeft, Activity, Target, TrendingUp } from 'lucide-react'
+import './AuthPage.css'
 
 const getAppRedirectUrl = () => new URL(import.meta.env.BASE_URL, window.location.origin).toString()
 
@@ -80,6 +81,19 @@ export default function Auth() {
 
   return (
     <div className="auth-screen">
+      <aside className="auth-showcase" aria-label="LiftLab introduction">
+        <div className="auth-showcase-brand"><div className="auth-brand-icon"><Dumbbell size={23} /></div><span>Lift<span style={{ color: 'var(--accent)' }}>Lab</span></span></div>
+        <div className="auth-showcase-copy">
+          <span className="auth-showcase-kicker"><Activity size={14} /> TRAIN WITH INTENTION</span>
+          <h2>Build strength.<br /><span>Track progress.</span><br />Stay consistent.</h2>
+          <p>Your training, workouts and progress come together in one focused space. Make every session count.</p>
+        </div>
+        <div className="auth-showcase-points">
+          <div className="auth-showcase-point"><strong><Target size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Your plans</strong><span>Training built around you</span></div>
+          <div className="auth-showcase-point"><strong><Activity size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Your sessions</strong><span>Log every set and rep</span></div>
+          <div className="auth-showcase-point"><strong><TrendingUp size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Your progress</strong><span>See consistency add up</span></div>
+        </div>
+      </aside>
       <div className="auth-card">
         <div className="auth-brand">
           <div className="auth-brand-icon">
