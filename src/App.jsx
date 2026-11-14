@@ -1294,6 +1294,7 @@ function PlanEditor({ plan, user, onBack }) {
   const [busy, setBusy] = useState(false)
   const [dayName, setDayName] = useState('')
   const [addingExerciseTo, setAddingExerciseTo] = useState(null)
+  const [exerciseLibraryType, setExerciseLibraryType] = useState('builtin')
   const [customExerciseDay, setCustomExerciseDay] = useState(null)
   const [confirmAction, setConfirmAction] = useState(null)
 
@@ -1538,11 +1539,23 @@ function PlanEditor({ plan, user, onBack }) {
               {addingExerciseTo === day.id && (
                 <div className="add-exercise-row">
                   <select
+                    aria-label="Exercise library type"
+                    value={exerciseLibraryType}
+                    onChange={e => setExerciseLibraryType(e.target.value)}
+                  >
+                    <option value="builtin">Built-in exercises</option>
+                    <option value="custom">My custom exercises</option>
+                  </select>
+                  <select
+                    key={exerciseLibraryType}
                     defaultValue=""
                     onChange={e => e.target.value && addExercise(day, e.target.value)}
                   >
-                    <option value="" disabled>Select an exercise...</option>
+                    <option value="" disabled>
+                      {exerciseLibraryType === 'builtin' ? 'Select a built-in exercise...' : 'Select a custom exercise...'}
+                    </option>
                     {[...library]
+                      .filter(ex => exerciseLibraryType === 'builtin' ? ex.is_builtin : !ex.is_builtin)
                       .sort((a, b) => {
                         const bodyPartDifference = getExerciseBodyPartRank(a) - getExerciseBodyPartRank(b)
                         return bodyPartDifference || a.name.localeCompare(b.name)
@@ -1553,13 +1566,15 @@ function PlanEditor({ plan, user, onBack }) {
                         </option>
                       ))}
                   </select>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => setCustomExerciseDay(day)}
-                  >
-                    <Plus size={15} /> Create custom
-                  </button>
+                  {exerciseLibraryType === 'custom' && (
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => setCustomExerciseDay(day)}
+                    >
+                      <Plus size={15} /> Create custom exercise
+                    </button>
+                  )}
                 </div>
               )}
 
