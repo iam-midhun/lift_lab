@@ -1605,6 +1605,25 @@ h1 {
   font-size: 12px;
 }
 
+.logger-history-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.logger-history-actions .danger-icon {
+  width: 34px;
+  height: 34px;
+}
+
+@media (max-width: 600px) {
+  .logger-history-actions {
+    gap: 7px;
+  }
+}
+
+
 @media (max-width: 600px) {
   .logger-active-header {
     align-items: flex-start;
