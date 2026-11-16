@@ -920,6 +920,136 @@ function ExerciseModal({ user, onClose, onCreated }) {
 }
 
 
+function WorkoutCsvImportModal({ onClose, onImport, importing, library }) {
+  const [rows, setRows] = useState([])
+  const [fileName, setFileName] = useState('')
+  const [fileError, setFileError] = useState('')
+  const [reading, setReading] = useState(false)
+
+  const parseCsvLine = line => {
+    const values = []
+    let value = ''
+    let quoted = false
+    for (let index = 0; index < line.length; index += 1) {
+      const character = line[index]
+      if (character === '"' && line[index + 1] === '"' && quoted) {
+        value += '"'
+        index += 1
+      } else if (character === '"') {
+        quoted = !quoted
+      } else if (character === ',' && !quoted) {
+        values.push(value.trim())
+        value = ''
+      } else {
+        value += character
+      }
+    }
+    values.push(value.trim())
+    return values
+  }
+
+  const handleFile = async event => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setFileError('')
+    setRows([])
+    setFileName(file.name)
+    setReading(true)
+    try {
+      const text = await file.text()
+      const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(line => line.trim())
+      if (lines.length < 2) throw new Error('The CSV needs a header row and at least one exercise row.')
+      const headers = parseCsvLine(lines[0]).map(header => header.toLowerCase().replace(/[\s-]+/g, '_'))
+      const findColumn = (...names) => names.map(name => headers.indexOf(name)).find(index => index !== undefined && index >= 0)
+      const dayIndex = findColumn('day', 'day_name', 'split', 'workout_day')
+      const exerciseIndex = findColumn('exercise', 'exercise_name', 'name')
+      const setsIndex = findColumn('sets')
+      const repsIndex = findColumn('reps')
+      const restIndex = findColumn('rest_seconds', 'rest', 'rest_sec')
+      if (dayIndex === undefined || exerciseIndex === undefined) {
+        throw new Error('Required columns are missing. Include "day" and "exercise" columns.')
+      }
+
+      const parsed = lines.slice(1).map((line, index) => {
+        const values = parseCsvLine(line)
+        const day = values[dayIndex]?.trim()
+        const exercise = values[exerciseIndex]?.trim()
+        if (!day || !exercise) throw new Error(`Row ${index + 2}: day and exercise cannot be blank.`)
+        const setsValue = setsIndex === undefined || !values[setsIndex] ? 3 : Number(values[setsIndex])
+        const restValue = restIndex === undefined || !values[restIndex] ? 90 : Number(values[restIndex])
+        if (!Number.isInteger(setsValue) || setsValue < 1 || setsValue > 20) throw new Error(`Row ${index + 2}: sets must be between 1 and 20.`)
+        if (!Number.isFinite(restValue) || restValue < 0) throw new Error(`Row ${index + 2}: rest_seconds must be zero or higher.`)
+        return {
+          day,
+          exercise,
+          sets: setsValue,
+          reps: repsIndex === undefined || !values[repsIndex]?.trim() ? '8-12' : values[repsIndex].trim(),
+          rest_seconds: restValue,
+        }
+      })
+      setRows(parsed)
+    } catch (error) {
+      setFileError(error.message || 'Unable to read this CSV file.')
+    } finally {
+      setReading(false)
+    }
+  }
+
+  const missingExercises = [...new Set(rows
+    .filter(row => !library.some(ex => ex.name.trim().toLowerCase() === row.exercise.trim().toLowerCase()))
+    .map(row => row.exercise))]
+  const splitCount = new Set(rows.map(row => row.day)).size
+  const groupedPreview = [...new Set(rows.map(row => row.day))]
+
+  return (
+    <Modal title="Import workout split from CSV" onClose={onClose}>
+      <div className="feature-form">
+        <p className="subtitle">Upload one CSV containing all workout days. LiftLab groups rows by the Day column and creates the split automatically.</p>
+        <label>
+          CSV file
+          <input type="file" accept=".csv,text/csv" onChange={handleFile} />
+        </label>
+        {fileName && <small>{fileName}</small>}
+        {reading && <p>Reading CSV...</p>}
+        {fileError && <p className="form-error" role="alert">{fileError}</p>}
+        {rows.length > 0 && (
+          <>
+            <div className="panel" style={{ padding: 12 }}>
+              <strong>{rows.length} exercises · {splitCount} workout days</strong>
+              <p>Days detected: {groupedPreview.join(', ')}</p>
+              <p>Default values: 3 sets, 8-12 reps and 90 seconds rest when a column is blank or missing.</p>
+            </div>
+            {missingExercises.length > 0 ? (
+              <div className="form-error" role="alert">
+                <strong>Exercises not found in your library:</strong>
+                <p>{missingExercises.join(', ')}</p>
+                <small>Add these as custom exercises first. Then upload the CSV again.</small>
+              </div>
+            ) : (
+              <p role="status">All exercise names match your library and are ready to import.</p>
+            )}
+            <div className="plan-csv-preview">
+              {groupedPreview.map(day => (
+                <div key={day}>
+                  <strong>{day}</strong>
+                  <span>{rows.filter(row => row.day === day).map(row => row.exercise).join(' · ')}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        <p className="exercise-form-hint">Required columns: <strong>day, exercise</strong>. Optional: <strong>sets, reps, rest_seconds</strong>. Exercise names must match your Exercise Library.</p>
+        <div className="modal-actions">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={importing}>Cancel</button>
+          <button type="button" className="primary-button" disabled={!rows.length || missingExercises.length > 0 || importing || reading} onClick={() => onImport(rows)}>
+            {importing ? 'Importing...' : 'Import workout split'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 /* -------------------------------------------------------
    WORKOUT PLANS
 ------------------------------------------------------- */
@@ -1297,6 +1427,8 @@ function PlanEditor({ plan, user, onBack }) {
   const [exerciseLibraryType, setExerciseLibraryType] = useState('builtin')
   const [customExerciseDay, setCustomExerciseDay] = useState(null)
   const [confirmAction, setConfirmAction] = useState(null)
+  const [showCsvImport, setShowCsvImport] = useState(false)
+  const [importingCsv, setImportingCsv] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -1434,6 +1566,67 @@ function PlanEditor({ plan, user, onBack }) {
     }
   }
 
+  const importWorkoutRows = async rows => {
+    setImportingCsv(true)
+    try {
+      const unmatched = [...new Set(rows
+        .filter(row => !library.some(ex => ex.name.trim().toLowerCase() === row.exercise.trim().toLowerCase()))
+        .map(row => row.exercise))]
+      if (unmatched.length) {
+        throw new Error(`These exercises are not in your library: ${unmatched.join(', ')}. Add them as custom exercises first, then import again.`)
+      }
+
+      const grouped = new Map()
+      rows.forEach(row => {
+        const key = row.day.trim()
+        if (!grouped.has(key)) grouped.set(key, [])
+        grouped.get(key).push(row)
+      })
+
+      let dayOrder = days.length
+      for (const [dayName, dayRows] of grouped) {
+        dayOrder += 1
+        const { data: newDay, error: dayError } = await supabase
+          .from('workout_plan_days')
+          .insert({
+            plan_id: plan.id,
+            user_id: user.id,
+            day_name: dayName,
+            day_order: dayOrder,
+          })
+          .select('*')
+          .single()
+        if (dayError) throw new Error(`Could not create "${dayName}": ${dayError.message}`)
+
+        const exerciseRows = dayRows.map((row, index) => {
+          const exercise = library.find(ex => ex.name.trim().toLowerCase() === row.exercise.trim().toLowerCase())
+          return {
+            plan_day_id: newDay.id,
+            user_id: user.id,
+            exercise_id: exercise.id,
+            exercise_name: exercise.name,
+            sets: row.sets,
+            reps: row.reps,
+            rest_seconds: row.rest_seconds,
+            exercise_order: index + 1,
+          }
+        })
+        const { error: exercisesError } = await supabase
+          .from('workout_plan_exercises')
+          .insert(exerciseRows)
+        if (exercisesError) throw new Error(`Day "${dayName}" was created, but its exercises could not be imported: ${exercisesError.message}`)
+      }
+
+      setShowCsvImport(false)
+      await load()
+      alert(`Imported ${rows.length} exercises across ${grouped.size} workout days.`)
+    } catch (error) {
+      alert(error.message || 'Unable to import this CSV.')
+    } finally {
+      setImportingCsv(false)
+    }
+  }
+
   const updateExercise = async (exercise, field, value) => {
     const numeric = ['sets', 'rest_seconds'].includes(field)
       ? Number(value)
@@ -1493,6 +1686,9 @@ function PlanEditor({ plan, user, onBack }) {
 
           <button className="primary-button" disabled={busy}>
             <Plus size={17} /> Add day
+          </button>
+          <button type="button" className="secondary-button" onClick={() => setShowCsvImport(true)}>
+            <Plus size={17} /> Import CSV
           </button>
         </form>
       </section>
@@ -1640,6 +1836,14 @@ function PlanEditor({ plan, user, onBack }) {
             </section>
           ))}
         </div>
+      )}
+      {showCsvImport && (
+        <WorkoutCsvImportModal
+          onClose={() => setShowCsvImport(false)}
+          onImport={importWorkoutRows}
+          importing={importingCsv}
+          library={library}
+        />
       )}
       {customExerciseDay && (
         <ExerciseModal
