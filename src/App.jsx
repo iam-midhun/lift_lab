@@ -995,9 +995,9 @@ function WorkoutCsvImportModal({ onClose, onImport, importing, library }) {
     }
   }
 
-  const missingExercises = [...new Set(rows
+  const missingExercises = [...new Map(rows
     .filter(row => !library.some(ex => ex.name.trim().toLowerCase() === row.exercise.trim().toLowerCase()))
-    .map(row => row.exercise))]
+    .map(row => [row.exercise.trim().toLowerCase(), row.exercise.trim()])).values()]
   const splitCount = new Set(rows.map(row => row.day)).size
   const groupedPreview = [...new Set(rows.map(row => row.day))]
 
@@ -1020,13 +1020,13 @@ function WorkoutCsvImportModal({ onClose, onImport, importing, library }) {
               <p>Default values: 3 sets, 8-12 reps and 90 seconds rest when a column is blank or missing.</p>
             </div>
             {missingExercises.length > 0 ? (
-              <div className="form-error" role="alert">
-                <strong>Exercises not found in your library:</strong>
+              <div className="panel" style={{ padding: 12 }}>
+                <strong>{missingExercises.length} new custom exercises will be created automatically:</strong>
                 <p>{missingExercises.join(', ')}</p>
-                <small>Add these as custom exercises first. Then upload the CSV again.</small>
+                <small>LiftLab will add these to your Exercise Library and use them in the imported split. You can edit their muscle and equipment details later.</small>
               </div>
             ) : (
-              <p role="status">All exercise names match your library and are ready to import.</p>
+              <p role="status">All exercises already exist in your library.</p>
             )}
             <div className="plan-csv-preview">
               {groupedPreview.map(day => (
@@ -1038,10 +1038,10 @@ function WorkoutCsvImportModal({ onClose, onImport, importing, library }) {
             </div>
           </>
         )}
-        <p className="exercise-form-hint">Required columns: <strong>day, exercise</strong>. Optional: <strong>sets, reps, rest_seconds</strong>. Exercise names must match your Exercise Library.</p>
+        <p className="exercise-form-hint">Required columns: <strong>day, exercise</strong>. Optional: <strong>sets, reps, rest_seconds</strong>. Missing exercises are automatically saved as custom exercises.</p>
         <div className="modal-actions">
           <button type="button" className="secondary-button" onClick={onClose} disabled={importing}>Cancel</button>
-          <button type="button" className="primary-button" disabled={!rows.length || missingExercises.length > 0 || importing || reading} onClick={() => onImport(rows)}>
+          <button type="button" className="primary-button" disabled={!rows.length || importing || reading} onClick={() => onImport(rows)}>
             {importing ? 'Importing...' : 'Import workout split'}
           </button>
         </div>
@@ -1569,11 +1569,64 @@ function PlanEditor({ plan, user, onBack }) {
   const importWorkoutRows = async rows => {
     setImportingCsv(true)
     try {
-      const unmatched = [...new Set(rows
+      const missingNames = [...new Map(rows
         .filter(row => !library.some(ex => ex.name.trim().toLowerCase() === row.exercise.trim().toLowerCase()))
-        .map(row => row.exercise))]
-      if (unmatched.length) {
-        throw new Error(`These exercises are not in your library: ${unmatched.join(', ')}. Add them as custom exercises first, then import again.`)
+        .map(row => [row.exercise.trim().toLowerCase(), row.exercise.trim()])).values()]
+
+      const inferMuscles = exerciseName => {
+        const name = exerciseName.toLowerCase()
+        const rules = [
+          [/pec deck|chest fly|cable fly|chest press|bench press|push.?up|chest dip/, ['Chest']],
+          [/triceps|pushdown|skull crusher|overhead extension/, ['Triceps']],
+          [/row|pulldown|pull.?up|chin.?up|deadlift|lat/, ['Back']],
+          [/preacher curl|hammer curl|bicep|ez.?bar curl|dumbbell curl/, ['Biceps']],
+          [/squat|leg press|leg extension|lunge/, ['Quadriceps']],
+          [/leg curl|hamstring|nordic curl/, ['Hamstrings']],
+          [/hip thrust|glute|kickback/, ['Glutes']],
+          [/calf raise|calves/, ['Calves']],
+          [/crunch|sit.?up|plank|ab wheel|leg raise/, ['Abdominals']],
+          [/shoulder press|lateral raise|reverse pec|rear delt|front raise|face pull/, ['Shoulders']],
+          [/wrist curl|reverse curl|farmer.?s carry/, ['Forearms']],
+          [/shrug|upright row/, ['Traps']],
+        ]
+        const match = rules.find(([pattern]) => pattern.test(name))
+        if (match) return match[1]
+        const dayText = rows.find(row => row.exercise.trim().toLowerCase() === exerciseName.trim().toLowerCase())?.day || ''
+        const dayRules = [
+          [/chest/, 'Chest'], [/back/, 'Back'], [/biceps|arms/, 'Biceps'],
+          [/triceps|arms/, 'Triceps'], [/shoulder|delts/, 'Shoulders'],
+          [/quad|legs/, 'Quadriceps'], [/hamstring/, 'Hamstrings'],
+          [/glute/, 'Glutes'], [/abs|core/, 'Abdominals'],
+        ]
+        const inferred = dayRules.filter(([pattern]) => pattern.test(dayText)).map(([, muscle]) => muscle)
+        return inferred.length ? [...new Set(inferred)] : ['General']
+      }
+
+      let availableLibrary = [...library]
+      if (missingNames.length) {
+        const customExercises = missingNames.map(name => ({
+          owner_id: user.id,
+          name,
+          primary_muscles: inferMuscles(name),
+          secondary_muscles: [],
+          equipment: [],
+          exercise_type: 'strength',
+          category: 'compound',
+          difficulty: 'beginner',
+          instructions: '',
+          common_mistakes: '',
+          suggested_sets: 3,
+          suggested_reps: '8-12',
+          rest_seconds: 90,
+          muscle_activation: [],
+          is_builtin: false,
+        }))
+        const { data: createdExercises, error: createError } = await supabase
+          .from('exercise_library')
+          .insert(customExercises)
+          .select('*')
+        if (createError) throw new Error(`Could not create custom exercises: ${createError.message}`)
+        availableLibrary = [...availableLibrary, ...(createdExercises || [])]
       }
 
       const grouped = new Map()
@@ -1599,7 +1652,7 @@ function PlanEditor({ plan, user, onBack }) {
         if (dayError) throw new Error(`Could not create "${dayName}": ${dayError.message}`)
 
         const exerciseRows = dayRows.map((row, index) => {
-          const exercise = library.find(ex => ex.name.trim().toLowerCase() === row.exercise.trim().toLowerCase())
+          const exercise = availableLibrary.find(ex => ex.name.trim().toLowerCase() === row.exercise.trim().toLowerCase())
           return {
             plan_day_id: newDay.id,
             user_id: user.id,
@@ -1619,7 +1672,7 @@ function PlanEditor({ plan, user, onBack }) {
 
       setShowCsvImport(false)
       await load()
-      alert(`Imported ${rows.length} exercises across ${grouped.size} workout days.`)
+      alert(`Imported ${rows.length} exercises across ${grouped.size} workout days. Created ${missingNames.length} new custom exercises.`)
     } catch (error) {
       alert(error.message || 'Unable to import this CSV.')
     } finally {
