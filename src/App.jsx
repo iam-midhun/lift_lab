@@ -553,6 +553,7 @@ function ExercisesPage({ user }) {
   const [showCreate, setShowCreate] = useState(false)
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [confirmExercise, setConfirmExercise] = useState(null)
+  const [addingSmithExercises, setAddingSmithExercises] = useState(false)
 
   const loadExercises = async () => {
     setLoading(true)
@@ -597,6 +598,55 @@ function ExercisesPage({ user }) {
     return matchesSearch && matchesType && matchesMuscle && matchesEquipment
   })
 
+  const addSmithMachineCollection = async () => {
+    const collection = [
+      { name: 'Smith Machine Bench Press', primary_muscles: ['Chest'], secondary_muscles: ['Triceps', 'Shoulders'], category: 'compound', suggested_sets: 3, suggested_reps: '8-12' },
+      { name: 'Incline Smith Machine Press', primary_muscles: ['Chest'], secondary_muscles: ['Triceps', 'Shoulders'], category: 'compound', suggested_sets: 3, suggested_reps: '8-12' },
+      { name: 'Smith Machine Shoulder Press', primary_muscles: ['Shoulders'], secondary_muscles: ['Triceps'], category: 'compound', suggested_sets: 3, suggested_reps: '8-12' },
+      { name: 'Smith Machine Squat', primary_muscles: ['Quadriceps'], secondary_muscles: ['Glutes'], category: 'compound', suggested_sets: 3, suggested_reps: '8-12' },
+      { name: 'Smith Machine Lunges', primary_muscles: ['Quadriceps', 'Glutes'], secondary_muscles: ['Hamstrings'], category: 'compound', suggested_sets: 3, suggested_reps: '10-12' },
+      { name: 'Smith Machine Romanian Deadlift', primary_muscles: ['Hamstrings', 'Glutes'], secondary_muscles: ['Back'], category: 'compound', suggested_sets: 3, suggested_reps: '8-12' },
+      { name: 'Smith Machine Calf Raise', primary_muscles: ['Calves'], secondary_muscles: [], category: 'isolation', suggested_sets: 3, suggested_reps: '12-15' },
+      { name: 'Smith Machine Shrugs', primary_muscles: ['Traps'], secondary_muscles: ['Forearms'], category: 'isolation', suggested_sets: 3, suggested_reps: '10-15' },
+      { name: 'Smith Machine Hip Thrust', primary_muscles: ['Glutes'], secondary_muscles: ['Hamstrings'], category: 'compound', suggested_sets: 3, suggested_reps: '10-12' },
+      { name: 'Smith Machine Close-Grip Bench Press', primary_muscles: ['Triceps'], secondary_muscles: ['Chest', 'Shoulders'], category: 'compound', suggested_sets: 3, suggested_reps: '8-12' },
+    ]
+    setAddingSmithExercises(true)
+    try {
+      const existingNames = new Set(library.map(item => item.name.trim().toLowerCase()))
+      const missing = collection.filter(item => !existingNames.has(item.name.toLowerCase()))
+      if (!missing.length) {
+        alert('All Smith Machine exercises are already in your library.')
+        return
+      }
+      const records = missing.map(item => ({
+        owner_id: user.id,
+        name: item.name,
+        primary_muscles: item.primary_muscles,
+        secondary_muscles: item.secondary_muscles,
+        equipment: ['Smith Machine'],
+        exercise_type: 'strength',
+        category: item.category,
+        difficulty: 'beginner',
+        instructions: '',
+        common_mistakes: '',
+        suggested_sets: item.suggested_sets,
+        suggested_reps: item.suggested_reps,
+        rest_seconds: 90,
+        muscle_activation: [],
+        is_builtin: false,
+      }))
+      const { error } = await supabase.from('exercise_library').insert(records)
+      if (error) throw new Error(error.message)
+      await loadExercises()
+      alert(`Added ${missing.length} Smith Machine exercises to My exercises.`)
+    } catch (error) {
+      alert('Unable to add Smith Machine exercises: ' + error.message)
+    } finally {
+      setAddingSmithExercises(false)
+    }
+  }
+
   const deleteCustomExercise = exercise => {
     if (exercise.is_builtin) return
     setConfirmExercise(exercise)
@@ -635,9 +685,14 @@ function ExercisesPage({ user }) {
           <span className="hero-art-label hero-art-label-top">TRAIN SMARTER</span>
           <span className="hero-art-label hero-art-label-bottom">MOVE STRONGER</span>
         </div>
-        <button className="primary-button exercise-add-button" onClick={() => setShowCreate(true)}>
-          <Plus size={18} /> Add exercise
-        </button>
+        <div className="exercise-library-hero-actions">
+          <button className="secondary-button" onClick={addSmithMachineCollection} disabled={addingSmithExercises}>
+            {addingSmithExercises ? 'Adding...' : 'Add Smith Machine collection'}
+          </button>
+          <button className="primary-button exercise-add-button" onClick={() => setShowCreate(true)}>
+            <Plus size={18} /> Add exercise
+          </button>
+        </div>
       </div>
 
       <section className="panel exercise-filter-panel">
